@@ -1,0 +1,110 @@
+<html>
+
+<head>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.2.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.4.2.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.2.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/@holoviz/panel@0.13.0/dist/panel.min.js"></script>
+    <script type="text/javascript">
+      Bokeh.set_log_level("info");
+    </script>
+
+    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+    <py-env>
+        - numpy
+        - pandas
+        - panel==0.13.1a2
+        - openpyxl
+    </py-env>
+</head>
+
+<body>
+    <h1>Upload csv</h1>
+
+
+
+                <div id="fileinput"></div>
+                <div id="upload"></div>
+                <div id="table"></div>
+                <div id="download"></div>
+
+
+
+    <py-script>
+import asyncio
+import panel as pn
+import pandas as pd
+from openpyxl import Workbook
+from panel.io.pyodide import show
+
+fileInput = pn.widgets.FileInput(accept='.xlsx')
+uploadButton = pn.widgets.Button(name='Upload', button_type = 'primary')
+downloadButton = pn.widgets.Button(name='Download', button_type = 'primary')
+table = pn.widgets.Tabulator(pagination='remote', page_size=10)
+
+document.getElementById('table').style.display = 'none'
+
+def read_excel(filename):
+    df1 = pd.read_excel(filename, engine='openpyxl')
+    df1_list = df1.values.tolist()
+    # df1_col_list = df1['Mealkit'].tolist()
+    print(df1)
+    print("*********************")
+    print(df1_list)
+    print("*********************")
+    # print(df1_col_list)
+    return df1
+def select_columns(data_frame, column_names):
+    new_frame = data_frame.filter(column_names, axis=1)
+    print(new_frame)
+    return new_frame
+def format_color_groups(df):
+    colors = ['white', 'grey']
+    x = df.copy()
+    factors = list(x['Mealkit'].unique())
+    i = 0
+    for factor in factors:
+        style = f'background-color: {colors[i]}'
+        x.loc[x['Mealkit'] == factor, :] = style
+        i = not i
+    return x
+def process_file(event):
+    if fileInput.value is not None:
+<!--        table.value = pd.read_csv(io.BytesIO(fileInput.value))-->
+<!--        document.getElementById('table').style.display = 'block'-->
+        df1 = pd.read_excel(io.BytesIO(fileInput.value), engine='openpyxl')
+        df1_list = df1.values.tolist()
+        # df1_col_list = df1['Coolpouch'].tolist()
+        print(df1)
+        print("*********************")
+        print(df1_list)
+        print("*********************")
+        # print(df1_col_list)
+        selected_columns = ['Mealkit', 'Picks', 'Name']
+        new = select_columns(df1, selected_columns)
+        new.style.apply(format_color_groups, axis=None)
+<!--        return df1-->
+        table.value = new
+        document.getElementById('table').style.display = 'block'
+        new.to_excel('C:/Users/safiu/hellofresh/task/cool_pouch_test_file.xlsx', sheet_name='2p')
+
+def download_file(df):
+        df.to_excel('C:/Users/safiu/hellofresh/task/cool_pouch_test_file.xlsx', sheet_name='2p')
+
+uploadButton.on_click(process_file)
+downloadButton.on_click(download_file)
+
+await show(fileInput, 'fileinput')
+await show(uploadButton, 'upload')
+await show(table, 'table')
+await show(downloadButton, 'download')
+    </py-script>
+</body>
+
+</html>
